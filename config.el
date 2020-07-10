@@ -41,10 +41,10 @@
 ;; Customize key bindings
 (use-package! company
   :config
-  (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0.1) ; this makes company respond in real time (no delay)
-  (setq company-dabbrev-downcase 1)
-  (setq company-require-match 'never)
+  (setq company-minimum-prefix-length 1
+  company-idle-delay 0.1 ; this makes company respond in real time (no delay)
+  company-dabbrev-downcase 1
+  company-require-match 'never)
   (global-company-mode t)
 
   :bind (:map company-active-map
@@ -60,12 +60,19 @@
 ;; TODO: setup lsp-mdoe for typescript (and rust and c/cpp and everything else)
 ;; TODO: figure out if spelling works
 
+(let ((dicpath (expand-file-name "~/.dictionaries")))
+  (unless (file-exists-p dicpath)
+    (async-shell-command (concat "git clone git://anongit.freedesktop.org/libreoffice/dictionaries " dicpath)))
+	(setenv "DICPATH" (concat dicpath "/en")))
+
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000)
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
 ;; Make scroll-other-window consistant. This remaps isearch-regex-backward.
 (map! :g "C-M-r" #'scroll-other-window-down)
+
+(setq writeroom-fullscreen-effect nil)
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
