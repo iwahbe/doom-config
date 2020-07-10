@@ -64,6 +64,9 @@
 (setq gc-cons-threshold 100000000)
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
+;; Make scroll-other-window consistant. This remaps isearch-regex-backward.
+(map! :g "C-M-r" #'scroll-other-window-down)
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one
