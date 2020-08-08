@@ -56,9 +56,8 @@
 	       ("M-p" . #'company-select-previous-or-abort)
 	       ("M-n" . #'company-select-next-or-abort))
   )
-;; TODO: search for text in project, probably bind to SPC p S or rebind SPC p s
-;; TODO: setup lsp-mdoe for typescript (and rust and c/cpp and everything else)
-;; TODO: figure out if spelling works
+
+(setq lsp-rust-server 'rust-analyzer)
 
 (let ((dicpath (expand-file-name "~/.dictionaries")))
   (unless (file-exists-p dicpath)
@@ -73,6 +72,9 @@
 (map! :g "C-M-r" #'scroll-other-window-down)
 
 (setq writeroom-fullscreen-effect nil)
+
+(use-package! olivetti)
+(map! :after olivetti :map doom-leader-toggle-map :desc "Olivetti mode" "o" #'olivetti-mode)
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
