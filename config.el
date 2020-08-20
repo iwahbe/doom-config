@@ -69,7 +69,8 @@
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
 ;; Make scroll-other-window consistant. This remaps isearch-regex-backward.
-(map! :g "C-M-r" #'scroll-other-window-down)
+(map! :g "C-M-r" #'scroll-other-window-down
+      :n "g b" #'better-jumper-jump-backward)
 
 (setq writeroom-fullscreen-effect nil)
 

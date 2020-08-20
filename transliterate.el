@@ -73,10 +73,10 @@
   "Sensable defaults for completion-read for this mode.
 `COLLECTION' provides the collection of keys to choose from.
 `PROMPT' provides the prompt."
-  (let ((completion-extra-properties (if (hash-table-p collection)
-                                         '(:annotation-function (lambda (s) (concat " -- " (gethash s collection))))
-                                       completion-extra-properties)))
-    (completing-read (or prompt "Key: ") collection nil 'confirm nil nil nil t)))
+  (string-trim
+   (let* ((completion-extra-properties (list :annotation-function (when (hash-table-p collection)
+                                 (lambda (s) (concat " -- " (gethash s collection)))))))
+     (completing-read (or prompt "Key: ") collection nil 'confirm nil nil nil nil))))
 
 
 (defun transliterate-update-word-bank (dictionary name &optional force buffer)
@@ -134,8 +134,8 @@ Searches for the word bank in `BUFFER'. Will ask interactivly for `WORD' `DESCRI
   (interactive "P")
   (let* ((name (transliterate-set-current-word-bank name buffer))
          (dic (or (transliterate-find-word-bank name buffer) (make-hash-table :test #'equal)))
-         (key (or word (transliterate-completing-read (hash-table-keys dic) "Key: " )))
-         (value (or description (read-string "Value: " (gethash key dic)))))
+         (key (or word (transliterate-completing-read dic "Word: " )))
+         (value (or description (read-string (concat key ": ") (gethash key dic)))))
     (puthash key value dic)
     (transliterate-update-word-bank dic name t buffer)))
 
@@ -144,7 +144,7 @@ Searches for the word bank in `BUFFER'. Will ask interactivly for `WORD' `DESCRI
   (interactive "P")
   (let* ((name (transliterate-set-current-word-bank name buffer))
          (dic (or (transliterate-find-word-bank name buffer) (make-hash-table :test #'equal)))
-         (key (or word (transliterate-completing-read (hash-table-keys dic) "Key: "))))
+         (key (or word (transliterate-completing-read dic "Key: "))))
     (remhash key dic)
     (transliterate-update-word-bank dic name nil buffer)))
 
@@ -154,9 +154,9 @@ Searches for the word bank in `BUFFER'. Will ask interactivly for `WORD' `DESCRI
 
 (defun transliterate-seperate-paragraph (&optional start end)
   "If start is provided and end is not, then seperate-paragraph will "
-  (let ((region (transliterate-normalize-whitespace (transliterate-extract-text start end))))
-    (mapcar (lambda (a) (concat a "."))
-            (split-string region transliterate-unit-seperator t "[[:space:]]+"))))
+  (let* ((region (transliterate-normalize-whitespace (transliterate-extract-text start end)))
+         (sentences (split-string region transliterate-unit-seperator t "[[:space:]]+")))
+    (append (mapcar (lambda (a) (concat a ".")) (butlast sentences)) (last sentences))))
 
 (defun org-dblock-write:transliterate (params)
   "Refreshes a dynamic org block to hold the current translation in it's entirety."
@@ -269,7 +269,8 @@ Valid types are `nil' which means dwim, `\'org' which forces org style or `\'nat
   (interactive "r")
   (let* ((original-text (transliterate-extract-text start end))
          (sentences (transliterate-seperate-paragraph original-text))
-         (name (or name (read-string "Transliteration name: ")))
+         (name (or name (transliterate-normalize-tag
+                         (read-string "Transliteration name: "))))
          (normalized-type (transliterate-get-type type))
          (sentence-block (if (eq 'native normalized-type)
                              #'transliterate-native-sentence-block
@@ -287,10 +288,16 @@ Valid types are `nil' which means dwim, `\'org' which forces org style or `\'nat
                 (goto-char start))
         result))))
 
+(defun transliterate-normalize-tag (str)
+  "Normalize `STR' to be searchable with `TRANSLITERATE-FIND-NAME'.
+This means it is composed of only alphabetic charicters and underscores."
+  (replace-regexp-in-string "[^[:alpha:]_]" "" str)
+  )
+
 (defun transliterate-find-name (type &optional buffer)
   (with-current-buffer (if buffer buffer (current-buffer))
     (let ((out-list '())
-          (name-regexp " \\([[:alnum:]]+\\)\\(-[0-9]+\\)?"))
+          (name-regexp " \\([[:alpha:]_]+\\)\\(-[0-9]+\\)?"))
       (save-excursion
         (goto-char (point-min))
         (while
@@ -308,10 +315,10 @@ Valid types are `nil' which means dwim, `\'org' which forces org style or `\'nat
         (transliteration (transliterate-find-name 'transliteration buffer)))
     (cl-intersection original transliteration :test #'equal)))
 
-(defun transliterate-update ()
+(defun transliterate-update (&optional force)
   "Updates all block summaries."
   (interactive)
-  (when (and transliterate-mode transliterate-update-on-save)
+  (when (or force (and transliterate-mode transliterate-update-on-save))
     (let ((names (transliterate-find-names)))
       (while names
         (transliterate-native-update-summary (pop names))))))
