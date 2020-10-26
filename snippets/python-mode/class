@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: class
+# key: \class
+# --
+class ${1:Name}(${2:object}):
+      """ ${3: Description for $1}
+    """
+      def __init__(self, ${4:args}):
+         ${4:$(=python-expand-args yas-text)}
+         $0

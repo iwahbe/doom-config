@@ -50,12 +50,16 @@
   :bind (:map company-active-map
   	     ("<return>" . nil)
 	       ("RET" . nil)
+         ("<tab>" . nil)
+         ("TAB" . nil)
   	     ("C-@" . #'company-complete-selection) ;also means space
 	       ("C-SPC" . #'company-complete-selection)
 	       ("C-<space>" . #'company-complete-selection)
 	       ("M-p" . #'company-select-previous-or-abort)
 	       ("M-n" . #'company-select-next-or-abort))
   )
+
+(add-to-list 'exec-path "/usr/local/opt/llvm/bin")
 
 (setq lsp-rust-server 'rust-analyzer)
 
@@ -72,7 +76,18 @@
 (map! :g "C-M-r" #'scroll-other-window-down
       :n "g b" #'better-jumper-jump-backward)
 
+(load! "transliterate.el")
+
 (setq writeroom-fullscreen-effect nil)
+
+(defun =python-expand-args (arg-list)
+  (mapconcat (lambda (s)
+               (let* ((pre-default (car (split-string s "=" t "[[:blank:]]")))
+                      (untyped (car (split-string pre-default ":" t "[[:blank:]]"))))
+               (concat "self." pre-default " = " untyped)))
+             (seq-filter (lambda (s) (not (or (equal "*" s) (equal "self" s))))
+                         (split-string arg-list "," t "[[:blank:]]"))
+             "\n"))
 
 (use-package! olivetti)
 (map! :after olivetti :map doom-leader-toggle-map :desc "Olivetti mode" "o" #'olivetti-mode)
