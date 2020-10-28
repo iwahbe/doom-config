@@ -92,6 +92,25 @@
 (use-package! olivetti)
 (map! :after olivetti :map doom-leader-toggle-map :desc "Olivetti mode" "o" #'olivetti-mode)
 
+(defun =project-scratch-buffer-dwim (&optional arg same-window-p)
+  "Pop up a project scratch buffer if none exists, go to one if
+it's already there. If already in the buffer, close it."
+  (interactive "P")
+  (if (string-match-p "^\\*doom:scratch" (buffer-name))
+      (kill-current-buffer)
+    (doom/open-project-scratch-buffer arg same-window-p)))
+
+(defun =switch-to-project-scratch-buffer-dwim (&optional arg)
+  "Just like doom/project-scratch-buffer-dwim, except the scratch
+buffer occupies the current window if it exists."
+  (interactive "P")
+  (doom/project-scratch-buffer-dwim arg 'same-window))
+
+(map! :map doom-leader-project-map :desc "(dwim) Pop up scratch buffer" "x"
+      #'=project-scratch-buffer-dwim)
+(map! :map doom-leader-project-map :desc "(dwim) Switch to scratch buffer" "X"
+      #'=switch-to-project-scratch-buffer-dwim)
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one
