@@ -10,6 +10,7 @@
       user-mail-address "ian@wahbe.com")
 
 (setq fancy-splash-image (concat doom-private-dir "doom3small.png"))
+;; NOTE: The demon is named Deborah (ie Debra)
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
@@ -112,7 +113,7 @@ it's already there. If already in the buffer, close it."
   "Just like doom/project-scratch-buffer-dwim, except the scratch
 buffer occupies the current window if it exists."
   (interactive "P")
-  (doom/project-scratch-buffer-dwim arg 'same-window))
+  (=project-scratch-buffer-dwim arg 'same-window))
 
 (defmacro =dbg(form) `(let ((res ,form)) (message "%s => %s" '(,@form) res) res))
 
