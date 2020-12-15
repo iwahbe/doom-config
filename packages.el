@@ -50,3 +50,5 @@
 ;(unpin! t)
 
 (package! olivetti)
+(package! tree-sitter)
+(package! tree-sitter-langs)
