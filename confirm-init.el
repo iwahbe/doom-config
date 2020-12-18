@@ -7,6 +7,10 @@
   "Whiether to check the doom init on startup")
 
 (defun =check-doom!-init (&optional force)
+  "Check that `doom!' init mentions all modules that are prescent
+in the file system. Force mandates that a check is performed,
+regardless of `=do-check-doom!-init'."
+  (interactive "P")
   (when (or =do-check-doom!-init force)
     (let* ((init-modules (=modules-in-doom!-init))
            (fs-modules (=all-doom!-fs-modules))
@@ -37,6 +41,7 @@ Recomendataions are drawn from `init.example.el'"
                          (insert message)
                          (current-buffer))))
     (let ((shown (get-buffer-window "doom! missing")))
+      (message "doom! looks good.")
       (when shown
         (delete-window shown)))))
 
@@ -66,14 +71,16 @@ Recomendataions are drawn from `init.example.el'"
                                          (flatten-list (mapcar search-path doom-modules-dirs))))))))
 
 
-(defun =parse-doom!-asoc-list (list &optional header)
+(defun =parse-doom!-asoc-list (list)
   "Parse a list (:tag obj1 ojb2 :tag3 obj3) into ((:tag . obj1) (:tag . obj2) (:tag3 obj3)).
 `header' is the initial header and `list' is the list."
-  (when list
-    (if (string-prefix-p ":" (symbol-name (=parse-doom!-entry (car list))))
-        (=parse-doom!-asoc-list (cdr list) (car list))
-      (cons (cons header (=parse-doom!-entry (car list)))
-            (=parse-doom!-asoc-list (cdr list) header)))))
+  (let (res header)
+    (mapc (lambda (el)
+            (if (string-prefix-p ":" (symbol-name (=parse-doom!-entry el)))
+                (setq header el)
+              (setq res (cons (cons header (=parse-doom!-entry el)) res))))
+          list)
+    res))
 
 
 (defun =parse-doom!-entry (entry)

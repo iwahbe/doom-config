@@ -62,7 +62,6 @@
 	 ("M-p" . #'company-select-previous-or-abort)
 	 ("M-n" . #'company-select-next-or-abort)))
 
-(add-to-list 'exec-path "/usr/local/opt/llvm/bin")
 
 (setq lsp-rust-server 'rust-analyzer)
 
