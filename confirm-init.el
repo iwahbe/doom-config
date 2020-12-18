@@ -14,14 +14,17 @@ regardless of `=do-check-doom!-init'."
   (when (or =do-check-doom!-init force)
     (let* ((init-modules (=modules-in-doom!-init))
            (fs-modules (=all-doom!-fs-modules))
-           (deficit (cl-set-difference fs-modules init-modules :test 'equal)))
-      (=show-doom!-results deficit))))
+           (deficit (cl-set-difference fs-modules init-modules :test 'equal))
+           (extra (cl-set-difference init-modules fs-modules :test 'equal)))
+      (=show-doom!-results deficit extra))))
 
 
-(defun =show-doom!-results (deficit)
+(defun =show-doom!-results (&optional deficit extra)
   "Display recomendations to keep an up to date `init.el'.
-Recomendataions are drawn from `init.example.el'"
-  (if deficit
+Recomendataions are drawn from `init.example.el'. `deficit' are
+packages that are expected to be seen, but are not. `extra' are
+packages that are seen, but should not be."
+  (if (or deficit extra)
       (let ((message "The following modules were not mentioned:\n"))
         (with-temp-buffer
           (insert (=find-function-in-file (concat doom-emacs-dir "init.example.el") 'doom!))
@@ -31,11 +34,14 @@ Recomendataions are drawn from `init.example.el'"
                         (concat message
                                 (if (search-forward-regexp
                                      (concat "^[\n\t ;]*"(symbol-name (cdr package))) nil t)
-                                    (format "%s %s\n%s\n" (car package) (cdr package)
+                                    (format "expected %s %s\n%s\n" (car package) (cdr package)
                                             (buffer-substring-no-properties
                                              (line-beginning-position) (line-end-position)))
-                                  (format "%s %s\n" (car package) (cdr package))))))
+                                  (format "expected %s %s\n" (car package) (cdr package))))))
                 deficit))
+        (mapc (lambda (package)
+                (setq message (concat message (format "unexpected %s %s\n" (car package) (cdr package)))))
+              extra)
         (+popup-buffer (with-current-buffer (get-buffer-create "doom! missing")
                          (erase-buffer)
                          (insert message)
