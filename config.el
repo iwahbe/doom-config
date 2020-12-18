@@ -46,22 +46,21 @@
 (use-package! company
   :config
   (setq company-minimum-prefix-length 1
-  company-idle-delay 0.1 ; this makes company respond in real time (no delay)
-  company-dabbrev-downcase 1
-  company-require-match 'never)
+        company-idle-delay 0.1 ; this makes company respond in real time (no delay)
+        company-dabbrev-downcase 1
+        company-require-match 'never)
   (global-company-mode t)
 
   :bind (:map company-active-map
-  	     ("<return>" . nil)
-	       ("RET" . nil)
+  	 ("<return>" . nil)
+	 ("RET" . nil)
          ("<tab>" . nil)
          ("TAB" . nil)
-  	     ("C-@" . #'company-complete-selection) ;also means space
-	       ("C-SPC" . #'company-complete-selection)
-	       ("C-<space>" . #'company-complete-selection)
-	       ("M-p" . #'company-select-previous-or-abort)
-	       ("M-n" . #'company-select-next-or-abort))
-  )
+  	 ("C-@" . #'company-complete-selection) ;also means space
+	 ("C-SPC" . #'company-complete-selection)
+	 ("C-<space>" . #'company-complete-selection)
+	 ("M-p" . #'company-select-previous-or-abort)
+	 ("M-n" . #'company-select-next-or-abort)))
 
 (add-to-list 'exec-path "/usr/local/opt/llvm/bin")
 
@@ -73,8 +72,8 @@
 	(setenv "DICPATH" (concat dicpath "/en")))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
-(setq gc-cons-threshold 100000000)
-(setq read-process-output-max (* 1024 1024)) ;; 1mb
+(setq gc-cons-threshold 100000000
+      read-process-output-max (* 1024 1024)) ;; 1mb
 
 ;; Make scroll-other-window consistant. This remaps isearch-regex-backward.
 (map! :g "C-M-r" #'scroll-other-window-down
@@ -109,7 +108,6 @@ it's already there. If already in the buffer, close it."
         )
     (doom/open-project-scratch-buffer arg same-window-p)))
 
-(=project-scratch-buffer-dwim nil t)
 
 (defun =switch-to-project-scratch-buffer-dwim (&optional arg)
   "Just like doom/project-scratch-buffer-dwim, except the scratch
@@ -124,66 +122,8 @@ buffer occupies the current window if it exists."
 (map! :map doom-leader-project-map :desc "(dwim) Switch to scratch buffer" "X"
       #'=switch-to-project-scratch-buffer-dwim)
 
-(defun =check-doom-init ()
-  (let ((init-modules (=modules-in-init))
-        (fs-modules (=all-fs-modules)))
-    (cl-set-difference fs-modules init-modules :test 'equal)))
-
-(defun =modules-in-init ()
-  "Find all modules in the `init.el' file."
-  (let* ((init (concat doom-private-dir "/init.el"))
-         (doom-call (=find-function-in-file init 'doom!))
-         (uncommented (read (=remove-leading-comment-chars doom-call))))
-    (=parse-into-asoc-list (cdr uncommented))))
-
-(defun =all-fs-modules ()
-  "Returns a list of the form '((moduel . name)) for all modules described in the file system."
-  (let* ((no-self (lambda (dir) (let ((base (file-name-nondirectory dir)))
-                                  (not (or (string= base ".") (string= base ".."))))))
-         (search-path (lambda (dir)
-                        (when
-                            (and (file-exists-p dir) (funcall no-self dir))
-                          (directory-files dir t)))))
-    (mapcar (lambda (path) (cons
-                            (intern (concat ":" (file-name-nondirectory (string-remove-suffix "/" (file-name-directory path)))))
-                            (intern (file-name-nondirectory path))))
-            (seq-filter no-self (-flatten (mapcar search-path  (-flatten (mapcar search-path doom-modules-dirs))))))))
-
-(defun =parse-into-asoc-list (list &optional header)
-  "Parse a list (:tag obj1 ojb2 :tag3 obj3) into ((:tag . obj1) (:tag . obj2) (:tag3 obj3)).
-`header' is the initial header and `list' is the list."
-  (when list
-    (if (let ((sym (if (listp (car list))
-                       (caar list)
-                     (car list))))
-          (string-prefix-p ":" (symbol-name sym)))
-        (=parse-into-asoc-list (cdr list) (car list))
-      (cons (cons header (if (listp (car list))
-                             (caar list)
-                           (car list)))
-            (=parse-into-asoc-list (cdr list) header)))))
-
-(defun =find-function-in-file (file function)
-  "Returns the string matching `function's first invocation in `file'."
-  (with-temp-buffer
-    (insert-file-contents file)
-    (let (emacs-lisp-mode-hook
-          func-call)
-      (emacs-lisp-mode)
-      (while (not func-call)
-        (parse-partial-sexp (point) (point-max) nil t)
-        (let* ((start (point))
-               (end (scan-sexps (point) 1))
-               (guess (buffer-substring-no-properties start end)))
-          (if (equal function (car (read guess)))
-              (setq func-call guess)
-            (goto-char end))))
-      func-call)))
-
-(defun =remove-leading-comment-chars (text)
-  "Remove leading `;' from every line of `text'."
-  (mapconcat (lambda (x) (replace-regexp-in-string "^[ \t\n\r]*;*" "" x))
-             (split-string text "\n") "\n"))
+(load! "confirm-init.el")
+(=check-doom!-init)
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;

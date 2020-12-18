@@ -19,6 +19,7 @@
 (doom! :input
        ;;chinese
        ;;japanese
+       ;;layout            ; auie,ctsrnm is the superior home row
 
        :completion
        company           ; the ultimate code completion backend
@@ -27,6 +28,8 @@
        ivy               ; a search engine for love and life
 
        :ui
+       ;;emoji
+       ;;ligatures         ; ligatures and symbols to make your code pretty again
        ;;deft              ; notational velocity for Emacs
        doom              ; what makes DOOM look the way it does
        doom-dashboard    ; a nifty splash screen for Emacs
@@ -84,6 +87,7 @@
        ;;grammar           ; tasing grammar mistake every you make
 
        :tools
+       ;; biblio
        ;;ansible
        ;;debugger          ; FIXME stepping through code, to help you add bugs
        ;;direnv
@@ -185,4 +189,5 @@
        (default +bindings +smartparens)
 
        :os
-       macos)             ; MacOS-specific commands
+       tty               ; improve the terminal Emacs experience
+       (:if IS-MAC macos)); MacOS-specific commands
