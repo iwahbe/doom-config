@@ -124,6 +124,67 @@ buffer occupies the current window if it exists."
 (map! :map doom-leader-project-map :desc "(dwim) Switch to scratch buffer" "X"
       #'=switch-to-project-scratch-buffer-dwim)
 
+(defun =check-doom-init ()
+  (let ((init-modules (=modules-in-init))
+        (fs-modules (=all-fs-modules)))
+    (cl-set-difference fs-modules init-modules :test 'equal)))
+
+(defun =modules-in-init ()
+  "Find all modules in the `init.el' file."
+  (let* ((init (concat doom-private-dir "/init.el"))
+         (doom-call (=find-function-in-file init 'doom!))
+         (uncommented (read (=remove-leading-comment-chars doom-call))))
+    (=parse-into-asoc-list (cdr uncommented))))
+
+(defun =all-fs-modules ()
+  "Returns a list of the form '((moduel . name)) for all modules described in the file system."
+  (let* ((no-self (lambda (dir) (let ((base (file-name-nondirectory dir)))
+                                  (not (or (string= base ".") (string= base ".."))))))
+         (search-path (lambda (dir)
+                        (when
+                            (and (file-exists-p dir) (funcall no-self dir))
+                          (directory-files dir t)))))
+    (mapcar (lambda (path) (cons
+                            (intern (concat ":" (file-name-nondirectory (string-remove-suffix "/" (file-name-directory path)))))
+                            (intern (file-name-nondirectory path))))
+            (seq-filter no-self (-flatten (mapcar search-path  (-flatten (mapcar search-path doom-modules-dirs))))))))
+
+(defun =parse-into-asoc-list (list &optional header)
+  "Parse a list (:tag obj1 ojb2 :tag3 obj3) into ((:tag . obj1) (:tag . obj2) (:tag3 obj3)).
+`header' is the initial header and `list' is the list."
+  (when list
+    (if (let ((sym (if (listp (car list))
+                       (caar list)
+                     (car list))))
+          (string-prefix-p ":" (symbol-name sym)))
+        (=parse-into-asoc-list (cdr list) (car list))
+      (cons (cons header (if (listp (car list))
+                             (caar list)
+                           (car list)))
+            (=parse-into-asoc-list (cdr list) header)))))
+
+(defun =find-function-in-file (file function)
+  "Returns the string matching `function's first invocation in `file'."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (let (emacs-lisp-mode-hook
+          func-call)
+      (emacs-lisp-mode)
+      (while (not func-call)
+        (parse-partial-sexp (point) (point-max) nil t)
+        (let* ((start (point))
+               (end (scan-sexps (point) 1))
+               (guess (buffer-substring-no-properties start end)))
+          (if (equal function (car (read guess)))
+              (setq func-call guess)
+            (goto-char end))))
+      func-call)))
+
+(defun =remove-leading-comment-chars (text)
+  "Remove leading `;' from every line of `text'."
+  (mapconcat (lambda (x) (replace-regexp-in-string "^[ \t\n\r]*;*" "" x))
+             (split-string text "\n") "\n"))
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one

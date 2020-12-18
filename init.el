@@ -94,7 +94,6 @@
        ;;gist              ; interacting with github gists
        lookup              ; navigate your code and its documentation
        lsp
-       macos             ; MacOS-specific commands
        magit             ; a git porcelain for Emacs
        make              ; run make tasks from Emacs
        ;;pass              ; password manager for nerds
@@ -183,4 +182,7 @@
 
        :config
        ;;literate
-       (default +bindings +smartparens))
+       (default +bindings +smartparens)
+
+       :os
+       macos)             ; MacOS-specific commands
