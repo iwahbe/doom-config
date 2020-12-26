@@ -39,6 +39,7 @@ build () {
         --enable-locallisppath="${PWD}/nextstep/Emacs.app/Contents/MacOS" \
         --with-harfbuzz \
         --with-json \
+        --with-cairo
 
     make --jobs=$NJOBS NATIVE_FAST_BOOT=1
     cp -r lisp nextstep/Emacs.app/Contents/Resources/
