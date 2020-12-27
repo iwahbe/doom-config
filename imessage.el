@@ -12,7 +12,7 @@
             END AS name" "The part of the SQLite query that forms the name identifier.")
 
 (defvar-local imessage-conversation nil
-  "Current imessage conversation, nil is the conversation selector.")
+  "Current imessage conversation of the form (display name . conversation id), nil is the conversation selector.")
 
 (defun imessage-query
     (query buffer)
@@ -46,7 +46,8 @@
   "Fetches valid identifiers for conversations."
   (imessage-query
    (concat "SELECT DISTINCT
-        " imessage--identifier-query-part "
+        " imessage--identifier-query-part ",
+        chat.chat_identifier
     FROM
         chat
     JOIN chat_message_join ON chat. \"ROWID\" = chat_message_join.chat_id
@@ -62,15 +63,19 @@
   "Returns a list of valid chat identifiers, and nil"
   (with-temp-buffer
     (imessage-chat-identifiers-query (current-buffer) :limit 1000)
-    (mapcar (lambda (x) (elt x 0)) (imessage-read-csv (current-buffer) 1))))
+    (mapcar (lambda (x) (cons (elt x 0) (elt x 1)))
+            (imessage-read-csv (current-buffer) 2))))
 
 (defun imessage-select-conversation (&optional conversation)
   "Selects a conversation to focus on."
   (interactive)
   (when conversation (cl-assert (stringp conversation)))
-  (setq imessage-conversation (or conversation
-                                  (completing-read "Chat: " (cons nil (imessage-chat-identifiers)) nil t)))
-  (imessage-refresh))
+  (let ((idents (imessage-chat-identifiers)))
+    (setq imessage-conversation (or conversation
+                                    (let ((res (completing-read "Chat: " (cons nil idents) nil t)))
+                                      (seq-find (lambda (el) (equal (car el) res)) idents nil)))))
+  (imessage-refresh)
+  imessage-conversation)
 
 (defun imessage-refresh ()
   "Refreshes the contents of an imessage-mode buffer."
@@ -84,6 +89,12 @@
          ("date" 20 t)
          ("chat" 25 t)
          ("text" 1 nil)])
+  (add-hook tabulated-list-revert-hook 'imessage-refresh nil t)
+  (let ((mode-map (make-sparse-keymap "imessage-override-map")))
+    (define-key mode-map (kbd "s") 'imessage-send-message)
+    (define-key mode-map (kbd "c") 'imessage-select-conversation)
+    (make-local-variable 'minor-mode-overriding-map-alist)
+    (push (cons 'imessage-mode mode-map) minor-mode-overriding-map-alist))
   (tabulated-list-init-header))
 
 (defun imessage-read-csv (buffer ncolumns)
@@ -130,7 +141,7 @@ MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
 
 (defun imessage-make-entries ()
   "Generates entries suitable for `tabulated-list-entries'"
-  (let ((query-ident imessage-conversation))
+  (let ((query-ident (car imessage-conversation)))
     (with-temp-buffer
       (imessage-chat-query (current-buffer)
                            :limit (* 10 (frame-height))
@@ -145,3 +156,18 @@ MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
   (setq tabulated-list-entries (imessage-make-entries))
   (imessage-mode)
   (tabulated-list-print))
+
+(defun imessage--applescript (contents)
+  "Send a applescript event to Messages."
+  (call-process "osascript" nil nil nil
+                "-e"
+                (=dbg (concat "tell application \"Messages\" to " contents))))
+
+(defun imessage-send-message (&optional recipient message)
+  "Send MESSAGE to RECIPIENT."
+  (interactive)
+  (let ((to (or recipient imessage-conversation (imessage-select-conversation))))
+    (imessage--applescript (concat
+                            "send \"" (or message
+                                          (read-from-minibuffer (concat "Message to " (car to) ": ")))
+                            "\" to text chat \"" (cdr to) "\""))))
