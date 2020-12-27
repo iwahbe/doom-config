@@ -1,18 +1,15 @@
 ;;; imessage.backup.el -*- lexical-binding: t; -*-
 
-(defun imessage nil
-  (interactive)
-  (get-buffer-create "*imessage*")
-  (imessage-mode)
-  (setq tabulated-list-entries
-        (imessage-make-entries))
-  (tabulated-list-print))
-
 (defvar imessage-executable "/usr/bin/sqlite3"
   "The executable used to query chat.db.")
 
 (defvar imessage-database "/Users/ianwahbe/Library/Messages/chat.db"
   "The path of the imessage database.")
+
+(defvar imessage--identifier-query-part "CASE
+            WHEN chat.display_name IS NOT \"\" THEN chat.display_name
+            ELSE chat.chat_identifier
+            END AS name" "The part of the SQLite query that forms the name identifier.")
 
 (defvar-local imessage-conversation nil
   "Current imessage conversation, nil is the conversation selector.")
@@ -23,30 +20,33 @@
   (call-process imessage-executable nil buffer nil "--csv" imessage-database query))
 
 (cl-defun imessage-chat-query (buffer &key (limit 10) (identifier nil))
+  "Fetches chat data from the server. The format is as follows: [is_from_me, datetime sent, chat identifier, text]."
   (imessage-query
    (concat "SELECT
-        message.is_from_me,
-        datetime (message.date / 1000000000 + strftime (\"%s\", \"2001-01-01\"), \"unixepoch\", \"localtime\") AS message_date,
-        chat.chat_identifier,
-        message.text
-    FROM
-        chat
-    JOIN chat_message_join ON chat. \"ROWID\" = chat_message_join.chat_id
-    JOIN message ON chat_message_join.message_id = message. \"ROWID\""
+            message.is_from_me,
+            datetime (message.date / 1000000000 + strftime (\"%s\", \"2001-01-01\"), \"unixepoch\", \"localtime\") AS message_date,"
+           imessage--identifier-query-part ;; Generates `name'
+           ",\n
+            message.text
+            FROM
+            chat
+            JOIN chat_message_join ON chat. \"ROWID\" = chat_message_join.chat_id
+            JOIN message ON chat_message_join.message_id = message. \"ROWID\""
            (if identifier
                (progn
-                 (concat "\nWHERE chat.chat_identifier = '" identifier "'")))
+                 (concat "\nWHERE name = '" identifier "'")))
            "\nORDER BY
-    message_date DESC
-    LIMIT "
+            message_date DESC
+            LIMIT "
            (number-to-string limit)
            ";")
    buffer))
 
 (cl-defun imessage-chat-identifiers-query (buffer &key (limit 10))
+  "Fetches valid identifiers for conversations."
   (imessage-query
    (concat "SELECT DISTINCT
-        chat.chat_identifier
+        " imessage--identifier-query-part "
     FROM
         chat
     JOIN chat_message_join ON chat. \"ROWID\" = chat_message_join.chat_id
@@ -54,8 +54,8 @@
     ORDER BY
         message_date ASC
     LIMIT "
-           (number-to-string limit)
-           ";")
+        (number-to-string limit)
+        ";")
    buffer))
 
 (defun imessage-chat-identifiers ()
@@ -107,37 +107,39 @@ Quotes are escaped by quotes. We handle this with a finite state machine.
 NO-ESCAPE != \" -> NO-ESCAPE | == \" -> maybe-done
 MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
 "
-  (string-replace "\n" "\\n" (if (= (char-after) ?\")
-                                 (let ((start (1+ (point)))
-                                       maybe-escaped done)
-                                   (forward-char)
-                                   (while (not done)
-                                     (cond
-                                      ((and maybe-escaped (= (char-after) ?\"))
-                                       (setq maybe-escaped nil))
-                                      ;; We know that the next char is not ", so we esacape.
-                                      (maybe-escaped (setq done t))
-                                      ;; We know that maybe-escaped is false, and we hit a ", so we set it.
-                                      ((= (char-after) ?\")
-                                       (setq maybe-escaped t)))
-                                     (forward-char))
-                                   (buffer-substring-no-properties start (- (point) 2)))
-                               (let ((start (point)))
-                                 (re-search-forward "[,\n]")
-                                 (buffer-substring-no-properties start (1- (point)))))))
+  (string-replace
+   "\n" "\\n"
+   (if (= (char-after) ?\")
+       (let ((start (1+ (point)))
+             maybe-escaped done)
+         (forward-char)
+         (while (not done)
+           (cond
+            ((and maybe-escaped (= (char-after) ?\"))
+             (setq maybe-escaped nil))
+            ;; We know that the next char is not ", so we esacape.
+            (maybe-escaped (setq done t))
+            ;; We know that maybe-escaped is false, and we hit a ", so we set it.
+            ((= (char-after) ?\")
+             (setq maybe-escaped t)))
+           (forward-char))
+         (buffer-substring-no-properties start (- (point) 2)))
+     (let ((start (point)))
+       (re-search-forward "[,\n]")
+       (buffer-substring-no-properties start (1- (point)))))))
 
 (defun imessage-make-entries ()
   "Generates entries suitable for `tabulated-list-entries'"
   (let ((query-ident imessage-conversation))
     (with-temp-buffer
       (imessage-chat-query (current-buffer)
-                           :limit (* 2 (frame-height))
+                           :limit (* 10 (frame-height))
                            :identifier query-ident)
       (mapcar (lambda (e) (list nil e)) (imessage-read-csv (current-buffer) 4)))))
 
 
 (defun imessage ()
-  "Sets up imessage."
+  "Sets up an interactive imessage view."
   (interactive)
   (switch-to-buffer (get-buffer-create "*imessage*" t) t)
   (setq tabulated-list-entries (imessage-make-entries))
