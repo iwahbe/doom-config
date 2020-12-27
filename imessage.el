@@ -80,8 +80,7 @@
 (defun imessage-refresh ()
   "Refreshes the contents of an imessage-mode buffer."
   (interactive)
-  (setq tabulated-list-entries (imessage-make-entries))
-  (tabulated-list-revert))
+  (setq tabulated-list-entries (imessage-make-entries)))
 
 (define-derived-mode imessage-mode tabulated-list-mode
   (setq tabulated-list-format
@@ -89,12 +88,9 @@
          ("date" 20 t)
          ("chat" 25 t)
          ("text" 1 nil)])
-  (add-hook tabulated-list-revert-hook 'imessage-refresh nil t)
-  (let ((mode-map (make-sparse-keymap "imessage-override-map")))
-    (define-key mode-map (kbd "s") 'imessage-send-message)
-    (define-key mode-map (kbd "c") 'imessage-select-conversation)
-    (make-local-variable 'minor-mode-overriding-map-alist)
-    (push (cons 'imessage-mode mode-map) minor-mode-overriding-map-alist))
+  (add-hook 'tabulated-list-revert-hook 'imessage-refresh nil t)
+  (define-key imessage-mode-map (kbd "s") 'imessage-send-message)
+  (define-key imessage-mode-map (kbd "c") 'imessage-select-conversation)
   (tabulated-list-init-header))
 
 (defun imessage-read-csv (buffer ncolumns)
@@ -152,7 +148,7 @@ MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
 (defun imessage ()
   "Sets up an interactive imessage view."
   (interactive)
-  (switch-to-buffer (get-buffer-create "*imessage*" t) t)
+  (switch-to-buffer (get-buffer-create "*imessage*") t)
   (setq tabulated-list-entries (imessage-make-entries))
   (imessage-mode)
   (tabulated-list-print))
@@ -161,7 +157,7 @@ MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
   "Send a applescript event to Messages."
   (call-process "osascript" nil nil nil
                 "-e"
-                (=dbg (concat "tell application \"Messages\" to " contents))))
+                (concat "tell application \"Messages\" to " contents)))
 
 (defun imessage-send-message (&optional recipient message)
   "Send MESSAGE to RECIPIENT."
