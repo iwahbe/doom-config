@@ -35,6 +35,12 @@
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
+(after! org
+  (add-to-list 'org-capture-templates '("s" "School"))
+  (add-to-list 'org-capture-templates '("sn" "School Notes" entry (file+datetree "~/org/school.org")
+                                        "* NOTE %? :SCHOOL:\n%t"))
+  (add-to-list 'org-capture-templates '("st" "School Assignment" entry (file+datetree "~/org/school.org")
+                                        "* TODO %? :SCHOOL:\n%t")))
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -63,9 +69,10 @@
 	 ("M-p" . #'company-select-previous-or-abort)
 	 ("M-n" . #'company-select-next-or-abort)))
 
-(after! (tree-sitter-langs straight)
+(after! (tree-sitter)
   (add-to-list 'tree-sitter-load-path
-               (straight--build-file "tree-sitter-langs" "bin")))
+               (concat user-emacs-directory ".local/straight/repos/"
+                       "emacs-tree-sitter/tree-sitter-langs/" "bin/")))
 
 
 (setq lsp-rust-server 'rust-analyzer)
@@ -97,7 +104,9 @@
                          (split-string arg-list "," t "[[:blank:]]"))
              "\n"))
 
-(use-package! olivetti)
+(use-package! olivetti
+  :config
+  (setq-default olivetti-body-width 90))
 (map! :after olivetti :map doom-leader-toggle-map :desc "Olivetti mode" "o" #'olivetti-mode)
 
 (defun =project-scratch-buffer-dwim (&optional arg same-window-p)

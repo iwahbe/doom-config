@@ -14,10 +14,10 @@
 (defvar-local imessage-conversation nil
   "Current imessage conversation of the form (display name . conversation id), nil is the conversation selector.")
 
-(defun imessage-query
-    (query buffer)
+(defun imessage-query (query buffer)
   "Querys the imessage database with QUERY, dumping it's output into BUFFER"
-  (call-process imessage-executable nil buffer nil "--csv" imessage-database query))
+  (when (not (= 0 (call-process imessage-executable nil (list buffer t) nil "--csv" imessage-database query)))
+    (user-error "imessage: %s" (buffer-substring-no-properties (point-min) (min (point-max) 200)))))
 
 (cl-defun imessage-chat-query (buffer &key (limit 10) (identifier nil))
   "Fetches chat data from the server. The format is as follows: [is_from_me, datetime sent, chat identifier, text]."
@@ -75,6 +75,7 @@
                                     (let ((res (completing-read "Chat: " (cons nil idents) nil t)))
                                       (seq-find (lambda (el) (equal (car el) res)) idents nil)))))
   (imessage-refresh)
+  (tabulated-list-revert)
   imessage-conversation)
 
 (defun imessage-refresh ()
@@ -153,11 +154,12 @@ MAYBE-DONE == \" -> NO-ESCAPE | == \" -> DONE
   (imessage-mode)
   (tabulated-list-print))
 
-(defun imessage--applescript (contents)
+(defun imessage--applescript (contents &option error)
   "Send a applescript event to Messages."
-  (call-process "osascript" nil nil nil
-                "-e"
-                (concat "tell application \"Messages\" to " contents)))
+  (unless (= 0 (call-process "osascript" nil nil nil
+                             "-e"
+                             (concat "tell application \"Messages\" to " contents)))
+    (error (concat "imessage: " (or error "somthing failed")))))
 
 (defun imessage-send-message (&optional recipient message)
   "Send MESSAGE to RECIPIENT."
