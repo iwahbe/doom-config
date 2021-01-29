@@ -1,4 +1,4 @@
-;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+;;; $$DOOMDIR/config.el -*- lexical-binding: t; -*-
 
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
@@ -32,19 +32,44 @@
 ;; (setq doom-theme 'doom-vibrant)
 (setq doom-theme 'doom-moonlight)
 
+
+(defun =name-to-emacs-file (name)
+  "Convert a name to a appropriate file name."
+  (shell-quote-argument
+   (string-replace " " "-" (string-replace "_" "-" (downcase name)))))
+
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
-(after! org
+
+(defun =org-capture-add-class (name tag hotkey)
+  "Sets up a class for org capture."
+  (add-to-list 'org-capture-templates
+               `(,(concat "sc" hotkey) ,name entry (file+olp+datetree ,(concat org-directory (=name-to-emacs-file name) ".org"))
+                 ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?"))))
+
+(defun =org-capture-setup-school ()
   (add-to-list 'org-capture-templates '("s" "School"))
-  (add-to-list 'org-capture-templates '("sn" "School Notes" entry (file+datetree "~/org/school.org")
-                                        "* NOTE %? :SCHOOL:\n%t"))
-  (add-to-list 'org-capture-templates '("st" "School Assignment" entry (file+datetree "~/org/school.org")
-                                        "* TODO %? :SCHOOL:\n%t")))
+  (add-to-list 'org-capture-templates '("sc" "School classes"))
+  (=org-capture-add-class "Computability and Complexity" "CSCI387" "c")
+  (=org-capture-add-class "Topics in Systems" "CSCI442" "s")
+  (=org-capture-add-class "Parallelism and Concurrency" "CSCI361" "p")
+  (=org-capture-add-class "Thesis" "CSCI470" "t")
+  (add-to-list 'org-capture-templates `("sn" "School Notes" entry (file+olp+datetree ,(concat org-directory "school.org"))
+                                        "* NOTE %? :SCHOOL:\n%T"))
+  (add-to-list 'org-capture-templates `("sm" "School Meeting" entry (file+olp+datetree ,(concat org-directory "school.org"))
+                                        "* MEETING with %? :SCHOOL:MEETING:\n%T"))
+  (add-to-list 'org-capture-templates `("st" "School Assignment" entry (file+olp+datetree ,(concat org-directory "school.org"))
+                                        "* TODO %? :SCHOOL:\n%T")))
+
+(after! org
+  (=org-capture-setup-school)
+  (setq org-agenda-span 20))
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type t)
+;; For absolute line numbers, set this to `t'.
+(setq display-line-numbers-type 'relative)
 
 ;; This changes how modes activate.
 (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
@@ -128,7 +153,24 @@ buffer occupies the current window if it exists."
   (interactive "P")
   (=project-scratch-buffer-dwim arg 'same-window))
 
-(defmacro =dbg(form) `(let ((res ,form)) (message "%s => %s" '(,@form) res) res))
+(defmacro =dbg(form)
+  "Prints FORM => res where res is what FORM evaluates to. Returns res."
+  `(let ((res ,form)) (message "dbg: %s => %s" '(,@form) res) res))
+
+(defmacro =switch (on &rest conditionals)
+  "A switch statment.
+:comp specifies the 2-arity function to use for comparison. Defaults to `equal'.
+Specify a default argument with `t'. Note: this macro desugars into a `cond' statment."
+  (declare (indent defun))
+  (let* ((comp-provided (equal (car conditionals) :comp))
+         (comp (if comp-provided (cadr conditionals) 'equal))
+         (conditions (if comp-provided (cddr conditionals) conditionals)))
+    `(let ((on ,on))(cond ,@(mapcar (lambda (x)
+                                      (if (equal (car x) t)
+                                          `(t ,(cadr x))
+                                        (list `(funcall (quote ,comp) ,(car x) ,on) (cadr x))))
+                                    conditions)))))
+
 
 (map! :map doom-leader-project-map :desc "(dwim) Pop up scratch buffer" "x"
       #'=project-scratch-buffer-dwim)
