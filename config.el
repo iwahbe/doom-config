@@ -44,9 +44,14 @@
 
 (defun =org-capture-add-class (name tag hotkey)
   "Sets up a class for org capture."
-  (add-to-list 'org-capture-templates
-               `(,(concat "sc" hotkey) ,name entry (file+olp+datetree ,(concat org-directory (=name-to-emacs-file name) ".org"))
-                 ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?"))))
+  (let ((capture-body `(entry (file+olp+datetree ,(concat org-directory (=name-to-emacs-file name) ".org"))))
+        (tag (upcase tag)))
+    (add-to-list 'org-capture-templates ;; Add a new class meeting
+                 `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
+                   ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?") :jump-to-captured))
+    (add-to-list 'org-capture-templates ;; Add a new class todo
+                 `(,(concat "sc" (upcase hotkey)) ,(concat "TODO " name) ,@capture-body
+                   ,(concat "* TODO %?t :SCHOOL:" tag ":\n%T\n")))))
 
 (defun =org-capture-setup-school ()
   (add-to-list 'org-capture-templates '("s" "School"))
@@ -55,11 +60,12 @@
   (=org-capture-add-class "Topics in Systems" "CSCI442" "s")
   (=org-capture-add-class "Parallelism and Concurrency" "CSCI361" "p")
   (=org-capture-add-class "Thesis" "CSCI470" "t")
+  (=org-capture-add-class "CS221 Tutoring" "CSCI221TA" "g")
   (add-to-list 'org-capture-templates `("sn" "School Notes" entry (file+olp+datetree ,(concat org-directory "school.org"))
                                         "* NOTE %? :SCHOOL:\n%T"))
   (add-to-list 'org-capture-templates `("sm" "School Meeting" entry (file+olp+datetree ,(concat org-directory "school.org"))
                                         "* MEETING with %? :SCHOOL:MEETING:\n%T"))
-  (add-to-list 'org-capture-templates `("st" "School Assignment" entry (file+olp+datetree ,(concat org-directory "school.org"))
+  (add-to-list 'org-capture-templates `("st" "School TODO" entry (file+olp+datetree ,(concat org-directory "school.org"))
                                         "* TODO %? :SCHOOL:\n%T")))
 
 (after! org
@@ -159,17 +165,23 @@ buffer occupies the current window if it exists."
 
 (defmacro =switch (on &rest conditionals)
   "A switch statment.
-:comp specifies the 2-arity function to use for comparison. Defaults to `equal'.
-Specify a default argument with `t'. Note: this macro desugars into a `cond' statment."
+:comp specifies the 2-arity function to use for comparison.
+Defaults to `equal'. Specify a default argument with `t'. Specify
+a binding import statment with `@'. `@' will be bound to the `on'
+argument. Note: this macro desugars into a `cond' statment."
   (declare (indent defun))
   (let* ((comp-provided (equal (car conditionals) :comp))
          (comp (if comp-provided (cadr conditionals) 'equal))
-         (conditions (if comp-provided (cddr conditionals) conditionals)))
-    `(let ((on ,on))(cond ,@(mapcar (lambda (x)
-                                      (if (equal (car x) t)
-                                          `(t ,(cadr x))
-                                        (list `(funcall (quote ,comp) ,(car x) ,on) (cadr x))))
-                                    conditions)))))
+         (conditions (if comp-provided (cddr conditionals) conditionals))
+         (switch-case (lambda (x)
+                        (if (equal (car x) t)
+                            `(t ,(cadr x))
+                          (if (equal (car x ) '@)
+                              `(t (let ((@ on)) ,(cadr x)))
+                            (list `(funcall (quote ,comp) ,(car x) on) (cadr x)))))))
+    `(let ((on ,on)) ;; To ensure that on is only computed once at the beginning.
+       (cond ,@(mapcar switch-case
+                       conditions)))))
 
 
 (map! :map doom-leader-project-map :desc "(dwim) Pop up scratch buffer" "x"
