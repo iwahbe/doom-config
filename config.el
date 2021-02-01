@@ -48,7 +48,7 @@
         (tag (upcase tag)))
     (add-to-list 'org-capture-templates ;; Add a new class meeting
                  `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
-                   ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?") :jump-to-captured))
+                   ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?") :jump-to-captured t))
     (add-to-list 'org-capture-templates ;; Add a new class todo
                  `(,(concat "sc" (upcase hotkey)) ,(concat "TODO " name) ,@capture-body
                    ,(concat "* TODO %?t :SCHOOL:" tag ":\n%T\n")))))
