@@ -21,7 +21,7 @@
        (message "tikzalign: %s" (cadr err))
        nil))))
 
-(defun tikzalign-chunk-align-regions (start end on-chunk)
+(defun tikzalign--chunk-aligned-regions (start end on-chunk)
   "Chunk a region into similar parts. Calling ON-CHUNK on each part.
 ON-CHUNK should accept the beginning and end of a region.
 It should leave `point' at the end of the region to be parsed."
@@ -39,14 +39,13 @@ It should leave `point' at the end of the region to be parsed."
 (defun tikzalign-fill-region(&optional start end)
   "Aligns a tikz region. Aligns each continous block of nodes and path specifiers.
 A tikz-region is defined to be between `\begin{tikzpicture}' and `\end{tikzpicture}'.
-If start and end are provided, assumes that this defines a region. This is not confirmed.
-"
+If start and end are provided, assumes that this defines a region. This is not confirmed."
   (interactive)
   (let ((region (if start (cons start end) (tikzalign-picture-region-p))))
     (when region
-      (tikzalign-chunk-align-regions (car region) (cdr region) 'tikzalign-fill-section))))
+      (tikzalign--chunk-aligned-regions (car region) (cdr region) 'tikzalign-fill-section))))
 
-(defun tikzalign-parse-line (line)
+(defun tikzalign--parse-line (line)
   "Parses a node style decl line into segments"
   (if (string-equal "" line)
       nil
@@ -78,9 +77,9 @@ If start and end are provided, assumes that this defines a region. This is not c
                    (cons (if (string-empty-p (string-trim parse-end))
                              " " (string-trim-right parse-end))
                          block-type))
-            (tikzalign-parse-line (substring line (length parse-end)))))))
+            (tikzalign--parse-line (substring line (length parse-end)))))))
 
-(defun tikzalign-normalize-lines(lines)
+(defun tikzalign--normalize-lines (lines)
   "Computes a normalized line. Then normalizes all lines in LINES."
   (let* ((normalize (lambda (normal x)
                       (let (out
@@ -109,19 +108,19 @@ If start and end are provided, assumes that this defines a region. This is not c
                             (push '("[]" .  square-bracket) x))
                            (t
                             (user-error "Missing expression in parse found '%s' and '%s'" (cdar x) (cdar y)))))
-                        (reverse (tikzalign-insert-break-text out)))))
+                        (reverse (tikzalign--insert-break-text out)))))
          (standard (cl-reduce normalize lines)))
     (mapcar (lambda (x) (funcall normalize standard x)) lines)))
 
-(defun tikzalign-insert-break-text (segment)
+(defun tikzalign--insert-break-text (segment)
   "Inserts text segments in between non text segments.."
   (when segment
     (cons (car segment)
           (if (or (equal 'text (cdar segment)) (equal 'text (cdadr segment)))
-              (tikzalign-insert-break-text (cdr segment))
-            (cons '(" " . text) (tikzalign-insert-break-text (cdr segment)))))))
+              (tikzalign--insert-break-text (cdr segment))
+            (cons '(" " . text) (tikzalign--insert-break-text (cdr segment)))))))
 
-(defun tikzalign-line-max-sizes (lines)
+(defun tikzalign--line-max-sizes (lines)
   "Takes a parsed sequence and consistant LINES and calculates the max size of each component."
   (mapcar (lambda (x) (cons (length (car x)) (cdr x)))
           (cl-reduce (lambda (x y)
@@ -133,7 +132,7 @@ If start and end are provided, assumes that this defines a region. This is not c
                           x y))
              lines)))
 
-(defun tikzalign-pad-line (segment left-pad right-pad pad-length)
+(defun tikzalign--pad-line (segment left-pad right-pad pad-length)
   "Pads a segment between left-pad and right-pad."
   (concat left-pad (string-pad
                     (substring segment
@@ -142,18 +141,18 @@ If start and end are provided, assumes that this defines a region. This is not c
                     (max 0 (- pad-length (+ (length left-pad) (length right-pad)))))
           right-pad))
 
-(defun tikzalign-format-line (line guide)
+(defun tikzalign--format-line (line guide)
   "Takes a parsed node line and formats it according to guide"
   (cl-assert (equal (length line) (length guide)))
   (mapconcat 'identity (cl-mapcar ;; Lists of unequal length will be cut off
                         (lambda (segment plan)
                           (cond
                            ((equal (cdr segment) 'square-bracket)
-                            (tikzalign-pad-line (car segment) "[" "]" (car plan)))
+                            (tikzalign--pad-line (car segment) "[" "]" (car plan)))
                            ((equal (cdr segment) 'curly-brace)
-                            (tikzalign-pad-line (car segment) "{" "}" (car plan)))
+                            (tikzalign--pad-line (car segment) "{" "}" (car plan)))
                            ((equal (cdr segment) 'paren)
-                            (tikzalign-pad-line (car segment) "(" ")" (car plan)))
+                            (tikzalign--pad-line (car segment) "(" ")" (car plan)))
                            (t
                             (string-pad (car segment) (car plan)))))
                         line guide)
@@ -162,12 +161,12 @@ If start and end are provided, assumes that this defines a region. This is not c
 (defun tikzalign-fill-section (start end)
   "Align the tikz graph nodes in a region. Region is specified by START and END."
   (interactive "r")
-  (let* ((parsed (tikzalign-normalize-lines(mapcar 'tikzalign-parse-line
-                                                   (split-string (buffer-substring-no-properties start end) "[\n]" t))))
-         (max-template (tikzalign-line-max-sizes parsed)))
+  (let* ((parsed (tikzalign--normalize-lines (mapcar 'tikzalign--parse-line
+                                                     (split-string (buffer-substring-no-properties start end) "[\n]" t))))
+         (max-template (tikzalign--line-max-sizes parsed)))
     (replace-region-contents start end
-                             (lambda () (concat (mapconcat (lambda (x) (tikzalign-format-line x max-template))
-                                                      parsed "\n")
-                                           "\n")))))
+                             (lambda () (concat (mapconcat (lambda (x) (tikzalign--format-line x max-template))
+                                                           parsed "\n")
+                                                "\n")))))
 
 (provide 'tikzalign)

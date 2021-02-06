@@ -43,17 +43,20 @@
 (setq org-directory "~/org/")
 
 (defun =org-capture-add-class (name tag hotkey)
-  "Sets up a class for org capture."
+  "Sets up a class for org capture. Class has an associated CLASS and TODO task.
+NAME is used to generate a file with `=name-to-emacs-file'. TAG is the associated org-mode tag.
+HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ignoring capitalization."
   (let ((capture-body `(entry (file+olp+datetree ,(concat org-directory (=name-to-emacs-file name) ".org"))))
         (tag (upcase tag)))
     (add-to-list 'org-capture-templates ;; Add a new class meeting
                  `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
-                   ,(concat "* CLASS %t :SCHOOL:" tag ":\n%T\n%?") :jump-to-captured t))
+                   ,(concat "* CLASS %? :SCHOOL:" tag ":\n%T\n") :jump-to-captured t))
     (add-to-list 'org-capture-templates ;; Add a new class todo
                  `(,(concat "sc" (upcase hotkey)) ,(concat "TODO " name) ,@capture-body
-                   ,(concat "* TODO %?t :SCHOOL:" tag ":\n%T\n")))))
+                   ,(concat "* TODO %? :SCHOOL:" tag ":\n%T\n")))))
 
 (defun =org-capture-setup-school ()
+  "Modify `org-capture-templates' to accommodate classes."
   (add-to-list 'org-capture-templates '("s" "School"))
   (add-to-list 'org-capture-templates '("sc" "School classes"))
   (=org-capture-add-class "Computability and Complexity" "CSCI387" "c")
