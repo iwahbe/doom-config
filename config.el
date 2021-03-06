@@ -42,11 +42,13 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
 
-(defun =org-capture-add-class (name tag hotkey)
+(defun =org-capture-add-class (name tag hotkey &optional dir)
   "Sets up a class for org capture. Class has an associated CLASS and TODO task.
 NAME is used to generate a file with `=name-to-emacs-file'. TAG is the associated org-mode tag.
 HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ignoring capitalization."
-  (let ((capture-body `(entry (file+olp+datetree ,(concat org-directory (=name-to-emacs-file name) ".org"))))
+  (let ((capture-body `(entry (file+olp+datetree
+                               ,(expand-file-name (concat (=name-to-emacs-file name) ".org")
+                                                  (or dir org-directory)))))
         (tag (upcase tag)))
     (add-to-list 'org-capture-templates ;; Add a new class meeting
                  `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
@@ -59,10 +61,10 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
   "Modify `org-capture-templates' to accommodate classes."
   (add-to-list 'org-capture-templates '("s" "School"))
   (add-to-list 'org-capture-templates '("sc" "School classes"))
-  (=org-capture-add-class "Computability and Complexity" "CSCI387" "c")
+  (=org-capture-add-class "Computability and Complexity" "CSCI387" "c" "~/Projects/cs387-comp-comp")
   (=org-capture-add-class "Topics in Systems" "CSCI442" "s")
-  (=org-capture-add-class "Parallelism and Concurrency" "CSCI361" "p")
-  (=org-capture-add-class "Thesis" "CSCI470" "t")
+  (=org-capture-add-class "Parallelism and Concurrency" "CSCI361" "p" "~/Projects/cs361-parallelism-and-concurrency")
+  (=org-capture-add-class "Thesis" "CSCI470" "t" "~/Projects/thesis")
   (=org-capture-add-class "CS221 Tutoring" "CSCI221TA" "g")
   (add-to-list 'org-capture-templates `("sn" "School Notes" entry (file+olp+datetree ,(concat org-directory "school.org"))
                                         "* NOTE %? :SCHOOL:\n%T"))
@@ -87,9 +89,11 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 (use-package! company
   :config
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.1 ; this makes company respond in real time (no delay)
+        company-idle-delay 0.1
         company-dabbrev-downcase 1
         company-require-match 'never)
+  ;; expiremental
+  (setq company-ispell-cache-results t)
   (global-company-mode t)
 
   :bind (:map company-active-map
@@ -108,13 +112,14 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
                (concat user-emacs-directory ".local/straight/repos/"
                        "emacs-tree-sitter/tree-sitter-langs/" "bin/")))
 
-
 (setq lsp-rust-server 'rust-analyzer)
 
-(let ((dicpath (expand-file-name "~/.dictionaries")))
-  (unless (file-exists-p dicpath)
-    (async-shell-command (concat "git clone git://anongit.freedesktop.org/libreoffice/dictionaries " dicpath)))
-	(setenv "DICPATH" (concat dicpath "/en")))
+;; (let ((dicpath (expand-file-name "~/.dictionaries")))
+;;   (unless (file-exists-p dicpath)
+;;     (async-shell-command (concat "git clone git://anongit.freedesktop.org/libreoffice/dictionaries "
+;;                                  dicpath " && cd " dicpath " && ./configure && make && make install")))
+;;   (setenv "DICPATH" (concat dicpath "/en"))
+;;   (ispell-change-dictionary "en_US" t))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000
@@ -191,6 +196,10 @@ argument. Note: this macro desugars into a `cond' statment."
       #'=project-scratch-buffer-dwim)
 (map! :map doom-leader-project-map :desc "(dwim) Switch to scratch buffer" "X"
       #'=switch-to-project-scratch-buffer-dwim)
+
+;; Broken
+(setq-hook! 'gfm-mode-hook +format-with :none)
+(setq-hook! 'markdown-mode-hook +format-with :none)
 
 (load! "confirm-init.el")
 (=check-doom!-init)

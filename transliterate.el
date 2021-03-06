@@ -126,7 +126,7 @@ The list of names is gathered by scanning `BUFFER'."
          ((not name) transliterate-current-word-bank)
          ((numberp name) (transliterate-completing-read (transliterate-find-name 'word-bank buffer) "Word Bank: "))
          ((stringp name) name)
-         (t (assert nil nil "Invalid name for set-current-word-bank")))))
+         (t (cl-assert nil nil "Invalid name for set-current-word-bank")))))
 
 (defun transliterate-add-to-word-bank (&optional name word description buffer)
   "Add a `WORD' to the current word bank called `NAME' with value `DESCRIPTION'.
@@ -257,7 +257,7 @@ If `PARAM-LIST' is non-nil, then this is a dynamic block"
   "Determines if running for org or native.
 Valid types are `\'native' and `\'org'."
   (if type (progn
-             (assert (or (eq 'org type) (eq 'native type))) type)
+             (cl-assert (or (eq 'org type) (eq 'native type))) type)
     (if (eq major-mode 'org-mode)
         'org
       'native)))

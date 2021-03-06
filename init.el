@@ -29,7 +29,7 @@
 
        :ui
        ;;emoji
-       (ligatures +fira)         ; ligatures and symbols to make your code pretty again
+       (ligatures +fira) ; ligatures and symbols to make your code pretty again
        ;;deft              ; notational velocity for Emacs
        doom              ; what makes DOOM look the way it does
        doom-dashboard    ; a nifty splash screen for Emacs
@@ -71,7 +71,7 @@
        dired             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer           ; interactive buffer management
-       ;;undo              ; persistent, smarter undo for your inevitable mistakes
+       undo              ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
@@ -182,6 +182,7 @@
        ;;irc               ; how neckbeards socialize
        ;;(rss +org)        ; emacs as an RSS reader
        ;;twitter           ; twitter client https://twitter.com/vnought
+       ;;everywhere        ; *leave* Emacs!? You must be joking
 
        :config
        ;;literate
