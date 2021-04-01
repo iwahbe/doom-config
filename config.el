@@ -46,10 +46,11 @@
   "Sets up a class for org capture. Class has an associated CLASS and TODO task.
 NAME is used to generate a file with `=name-to-emacs-file'. TAG is the associated org-mode tag.
 HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ignoring capitalization."
-  (let ((capture-body `(entry (file+olp+datetree
-                               ,(expand-file-name (concat (=name-to-emacs-file name) ".org")
-                                                  (or dir org-directory)))))
-        (tag (upcase tag)))
+  (let* ((path (expand-file-name (concat (=name-to-emacs-file name) ".org")
+                                 (or dir org-directory)))
+         (capture-body `(entry (file+olp+datetree ,path)))
+         (tag (upcase tag)))
+    (add-to-list 'org-agenda-files path)
     (add-to-list 'org-capture-templates ;; Add a new class meeting
                  `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
                    ,(concat "* CLASS %? :SCHOOL:" tag ":\n%T\n") :jump-to-captured t))
@@ -75,7 +76,9 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 
 (after! org
   (=org-capture-setup-school)
-  (setq org-agenda-span 20))
+  (setq org-agenda-span 20
+        org-edit-src-content-indentation 0
+        org-src-preserve-indentation nil))
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -113,13 +116,6 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
                        "emacs-tree-sitter/tree-sitter-langs/" "bin/")))
 
 (setq lsp-rust-server 'rust-analyzer)
-
-;; (let ((dicpath (expand-file-name "~/.dictionaries")))
-;;   (unless (file-exists-p dicpath)
-;;     (async-shell-command (concat "git clone git://anongit.freedesktop.org/libreoffice/dictionaries "
-;;                                  dicpath " && cd " dicpath " && ./configure && make && make install")))
-;;   (setenv "DICPATH" (concat dicpath "/en"))
-;;   (ispell-change-dictionary "en_US" t))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000
@@ -200,6 +196,8 @@ argument. Note: this macro desugars into a `cond' statment."
 ;; Broken
 (setq-hook! 'gfm-mode-hook +format-with :none)
 (setq-hook! 'markdown-mode-hook +format-with :none)
+(add-to-list '+format-on-save-enabled-modes 'markdown-mode t)
+
 
 (load! "confirm-init.el")
 (=check-doom!-init)

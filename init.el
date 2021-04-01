@@ -183,6 +183,7 @@
        ;;(rss +org)        ; emacs as an RSS reader
        ;;twitter           ; twitter client https://twitter.com/vnought
        ;;everywhere        ; *leave* Emacs!? You must be joking
+       ;;emms              ; for when itunes fails you
 
        :config
        ;;literate
