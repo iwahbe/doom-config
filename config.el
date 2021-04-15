@@ -102,15 +102,15 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
   (global-company-mode t)
 
   :bind (:map company-active-map
-  	 ("<return>" . nil)
-	 ("RET" . nil)
+         ("<return>" . nil)
+         ("RET" . nil)
          ("<tab>" . nil)
          ("TAB" . nil)
-  	 ("C-@" . #'company-complete-selection) ;also means space
-	 ("C-SPC" . #'company-complete-selection)
-	 ("C-<space>" . #'company-complete-selection)
-	 ("M-p" . #'company-select-previous-or-abort)
-	 ("M-n" . #'company-select-next-or-abort)))
+         ("C-@" . #'company-complete-selection) ;also means space
+         ("C-SPC" . #'company-complete-selection)
+         ("C-<space>" . #'company-complete-selection)
+         ("M-p" . #'company-select-previous-or-abort)
+         ("M-n" . #'company-select-next-or-abort)))
 
 (after! (tree-sitter)
   (add-to-list 'tree-sitter-load-path
@@ -135,8 +135,8 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 (defun =python-expand-args (arg-list)
   (mapconcat (lambda (s)
                (let* ((pre-default (car (split-string s "=" t "[[:blank:]]")))
-                      (untyped (car (split-string pre-default ":" t "[[:blank:]]"))))
-               (concat "self." pre-default " = " untyped)))
+                      (untyped (car (split-string pre-default ":" t "[[:blank:]]")))))
+               (concat "self." pre-default " = " untyped))
              (seq-filter (lambda (s) (not (or (equal "*" s) (equal "self" s))))
                          (split-string arg-list "," t "[[:blank:]]"))
              "\n"))
@@ -154,8 +154,8 @@ it's already there. If already in the buffer, close it."
       (if (= 1 (length (get-buffer-window-list (buffer-name))))
           (progn (kill-current-buffer) (message "Killed buffer"))
         (progn (set-window-buffer (selected-window) (other-buffer (current-buffer)))
-               (message "Switched buffer"))
-        )
+               (message "Switched buffer")))
+
     (doom/open-project-scratch-buffer arg same-window-p)))
 
 
@@ -204,6 +204,42 @@ argument. Note: this macro desugars into a `cond' statment."
 (load! "confirm-init.el")
 (=check-doom!-init)
 
+(use-package! parinfer-rust
+  :config
+  (setq parinfer-rust-preferred-mode 'paren))
+
+(use-package! vterm
+  :init
+  (defun =vterm-extend-source-path ()
+    "The path to the file containing vterm enabled extensions."
+    (let ((extension (cond
+                      ((equal vterm-shell "/bin/zsh") "-zsh.sh")
+                      ((equal vterm-shell "/bin/bash") "-bash.sh")
+                      ((equal vterm-shell "/bin/fish") ".fish"))))
+      (when extension
+        (concat straight-base-dir
+                "straight/repos/emacs-libvterm/etc/emacs-vterm"
+                extension))))
+
+  (add-to-list 'vterm-eval-cmds '("update-pwd" (lambda (path) (setq default-directory path))))
+  (defun =vterm-setup-shell ()
+    "Setup the running shell for vterm."
+    (let ((cmd (concat "source " (=vterm-extend-source-path))))
+      (vterm-send-string cmd)
+      (vterm-send-return)
+      (when (equal vterm-shell "/bin/zsh")
+        ;; Setup vterm_set_directory command
+        (vterm-send-string
+         "vterm_set_directory() {vterm_cmd update-pwd \"$PWD/\"}")
+        (vterm-send-return)
+        ;; Run the command before displaying the prompt
+        (vterm-send-string "precmd() {vterm_set_directory}")
+        (vterm-send-return))
+      (vterm-clear)))
+
+  (add-hook 'vterm-mode-hook '=vterm-setup-shell))
+
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one
@@ -229,9 +265,8 @@ argument. Note: this macro desugars into a `cond' statment."
    '((projectile-project-test-cmd . "../test.sh")
      (projectile-project-compilation-cmd . "../build.sh"))))
 
-(custom-set-faces
+(custom-set-faces)
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
