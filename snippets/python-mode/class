@@ -6,5 +6,5 @@ class ${1:Name}(${2:object}):
       """ ${3: Description for $1}
     """
       def __init__(self, ${4:args}):
-         ${4:$(=python-expand-args yas-text)}
+         ${4:$(=python-init-expand-args yas-text)}
          $0

@@ -24,9 +24,6 @@
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(let ((fira (font-spec :family "Fira Code" :size 12)))
-  (when (find-font fira)
-    (setq doom-font fira)))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -117,7 +114,10 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
                (concat user-emacs-directory ".local/straight/repos/"
                        "emacs-tree-sitter/tree-sitter-langs/" "bin/")))
 
-(setq lsp-rust-server 'rust-analyzer)
+(use-package! lsp-mode
+  :init
+  (setq lsp-rust-server 'rust-analyzer
+        lsp-rust-analyzer-inlay-hints-mode t))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000
@@ -127,19 +127,23 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 (map! :g "C-M-r" #'scroll-other-window-down
       :n "g b" #'better-jumper-jump-backward)
 
-(load! "transliterate.el")
-(load! "evil-structured.el")
-
 (setq writeroom-fullscreen-effect nil)
 
-(defun =python-expand-args (arg-list)
-  (mapconcat (lambda (s)
-               (let* ((pre-default (car (split-string s "=" t "[[:blank:]]")))
-                      (untyped (car (split-string pre-default ":" t "[[:blank:]]")))))
-               (concat "self." pre-default " = " untyped))
-             (seq-filter (lambda (s) (not (or (equal "*" s) (equal "self" s))))
-                         (split-string arg-list "," t "[[:blank:]]"))
-             "\n"))
+(defun =python-init-expand-args (arg-list)
+  "Converts the argument list for a python init function into an assignment
+x, y, z: T gets converted to
+self.x = x
+self.y = y
+self.z: T = z
+"
+  (mapconcat
+   (lambda (s)
+     (let* ((pre-default (car (split-string s "=" t "[[:blank:]]")))
+            (untyped (car (split-string pre-default ":" t "[[:blank:]]"))))
+       (concat "self." pre-default " = " untyped)))
+   (seq-filter (lambda (s) (not (or (equal "*" s) (equal "self" s))))
+               (split-string arg-list "," t "[[:blank:]]"))
+   "\n"))
 
 (use-package! olivetti
   :config
@@ -204,10 +208,6 @@ argument. Note: this macro desugars into a `cond' statment."
 (load! "confirm-init.el")
 (=check-doom!-init)
 
-(use-package! parinfer-rust
-  :config
-  (setq parinfer-rust-preferred-mode 'paren))
-
 (use-package! vterm
   :init
   (defun =vterm-extend-source-path ()
@@ -221,7 +221,6 @@ argument. Note: this macro desugars into a `cond' statment."
                 "straight/repos/emacs-libvterm/etc/emacs-vterm"
                 extension))))
 
-  (add-to-list 'vterm-eval-cmds '("update-pwd" (lambda (path) (setq default-directory path))))
   (defun =vterm-setup-shell ()
     "Setup the running shell for vterm."
     (let ((cmd (concat "source " (=vterm-extend-source-path))))
@@ -237,7 +236,11 @@ argument. Note: this macro desugars into a `cond' statment."
         (vterm-send-return))
       (vterm-clear)))
 
-  (add-hook 'vterm-mode-hook '=vterm-setup-shell))
+  :config
+  (add-hook 'vterm-mode-hook '=vterm-setup-shell)
+  (add-to-list 'vterm-eval-cmds '("update-pwd" (lambda (path) (setq default-directory path)))))
+
+
 
 
 ;; Here are some additional functions/macros that could help you configure Doom:

@@ -29,7 +29,7 @@
 
        :ui
        ;;emoji
-       (ligatures +fira) ; ligatures and symbols to make your code pretty again
+       ;;(ligatures +fira) ; ligatures and symbols to make your code pretty again
        ;;deft              ; notational velocity for Emacs
        doom              ; what makes DOOM look the way it does
        doom-dashboard    ; a nifty splash screen for Emacs
@@ -59,10 +59,10 @@
        fold              ; (nigh) universal code folding
        (format +onsave)  ; automated prettiness
        ;;god               ; run Emacs commands without modifier keys
-       lispy             ; vim for lisp, for people who don't like vim
+       ;;lispy             ; vim for lisp, for people who don't like vim
        multiple-cursors  ; editing in many places at once
        ;;objed             ; text object editing for the innocent
-       (parinfer +rust)  ; turn lisp into python, sort of
+       ;;(parinfer +rust)  ; turn lisp into python, sort of
        ;;rotate-text       ; cycle region at point between text candidates
        snippets          ; my elves. They type so I don't have to
        word-wrap         ; soft wrapping with language-aware indent
@@ -109,10 +109,8 @@
        ;;upload            ; map local to remote projects via ssh/ftp
 
        :lang
-       (agda             ; types of types of types of types...
-        +local)
-       (cc               ; C/C++/Obj-C madness
-        +lsp)
+       (agda +local)     ; types of types of types of types...
+       (cc +lsp)         ; C/C++/Obj-C madness
        ;;clojure           ; java with a lisp
        common-lisp       ; if you've seen one lisp, you've seen them all
        ;;coq               ; proofs-as-programs
@@ -135,10 +133,11 @@
        ;;idris             ;
        json              ; At least it ain't XML
        ;;(java +meghanada) ; the poster child for carpal tunnel syndrome
-       javascript        ; all(hope(abandon(ye(who(enter(here))))))
+       (javascript +lsp)        ; all(hope(abandon(ye(who(enter(here))))))
        ;;julia             ; a better, faster MATLAB
        ;;kotlin            ; a better, slicker Java(Script)
-       latex             ; writing papers in Emacs has never been so fun
+       (latex            ; writing papers in Emacs has never been so fun
+        +latexmk +cdlatex +fold)
        ;;lean
        ;;factor
        ;;ledger            ; an accounting system in Emacs
@@ -146,7 +145,7 @@
        markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        ;;nix               ; I hereby declare "nix geht mehr!"
-       ocaml             ; an objective camel
+       ;;ocaml             ; an objective camel
        (org              ; organize your plain life in plain text
         +pandoc)
        ;;php               ; perl's insecure younger brother
@@ -155,7 +154,7 @@
        (python           ; beautiful is better than ugly
         +lsp)
        ;;qt                ; the 'cutest' gui framework ever
-       racket            ; a DSL for DSLs
+       ;;racket            ; a DSL for DSLs
        ;;raku              ; the artist formerly known as perl6
        ;;rest              ; Emacs as a REST client
        ;;rst               ; ReST in peace
@@ -163,7 +162,7 @@
        (rust             ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
         +lsp)
        ;;scala             ; java, but good
-       scheme            ; a fully conniving family of lisps
+       ;;scheme            ; a fully conniving family of lisps
        sh                ; she sells {ba,z,fi}sh shells on the C xor
        ;;sml
        ;;solidity          ; do you need a blockchain? No.

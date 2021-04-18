@@ -1,11 +1,13 @@
 # Doom Configuration
 
-This is a responce config for [DOOM
-Emacs](https://github.com/hlissner/doom-emacs). Currently, nothing interesting
-resides here. I allocate emacs more resources and change the company-active-map.
+This is my personal config for [DOOM
+Emacs](https://github.com/hlissner/doom-emacs). This is provided as is, and I
+make no guarantees about the correctness or stability of my config.
 
 ## Installation
 
-Reliant on doom and git, there should be nothing to do for installing. Flyspell
-will download dictionaries into "~/.dictionaries" if the file does not already
-exist.
+Reliant on doom and `git`, there should be nothing to do for installing the
+general case. Some language specific binaries need to be installed. These include:
+  * `rust-analyzer`: This can be easily installed with `brew`. Alternatively, we
+    can build from source, following the instructions
+    [here](https://rust-analyzer.github.io/manual.html#installation).
