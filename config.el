@@ -49,7 +49,7 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
                                  (or dir org-directory)))
          (capture-body `(entry (file+olp+datetree ,path)))
          (tag (upcase tag)))
-    (add-to-list 'org-agenda-files path)
+    (when dir (add-to-list 'org-agenda-files path))
     (add-to-list 'org-capture-templates ;; Add a new class meeting
                  `(,(concat "sc" (downcase hotkey)) ,(concat "CLASS " name) ,@capture-body
                    ,(concat "* CLASS %? :SCHOOL:" tag ":\n%T\n") :jump-to-captured t))
@@ -117,7 +117,7 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 (use-package! lsp-mode
   :init
   (setq lsp-rust-server 'rust-analyzer
-        lsp-rust-analyzer-inlay-hints-mode t))
+        lsp-rust-analyzer-server-display-inlay-hints t))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000
