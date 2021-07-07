@@ -52,3 +52,4 @@
 (package! olivetti)
 (package! tree-sitter)
 (package! tree-sitter-langs)
+(package! sqlup-mode)

@@ -117,7 +117,8 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
 (use-package! lsp-mode
   :init
   (setq lsp-rust-server 'rust-analyzer
-        lsp-rust-analyzer-server-display-inlay-hints t))
+        lsp-rust-analyzer-server-display-inlay-hints t
+        lsp-metals-show-inferred-type t))
 
 ;; To match the performance of modern editors, Emacs needs to consume a similar amount of resources.
 (setq gc-cons-threshold 100000000
@@ -128,6 +129,9 @@ HOTKEY is the hotkey in `org-capture-templates' after `sc'. It must be unique ig
       :n "g b" #'better-jumper-jump-backward)
 
 (setq writeroom-fullscreen-effect nil)
+
+(use-package! sqlup-mode
+  :hook (sql-mode sql-interactive-mode))
 
 (defun =python-init-expand-args (arg-list)
   "Converts the argument list for a python init function into an assignment
@@ -198,6 +202,8 @@ argument. Note: this macro desugars into a `cond' statment."
       #'=project-scratch-buffer-dwim)
 (map! :map doom-leader-project-map :desc "(dwim) Switch to scratch buffer" "X"
       #'=switch-to-project-scratch-buffer-dwim)
+(map! :leader :desc "Expand region" "e"
+      #'er/expand-region)
 
 ;; Broken
 (setq-hook! 'gfm-mode-hook +format-with :none)
